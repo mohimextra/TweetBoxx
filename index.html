@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TweetBox</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --secondary: #4895ef;
+            --accent: #4cc9f0;
+            --text: #2b2d42;
+            --text-light: #8d99ae;
+            --background: #f8f9fa;
+            --card: #ffffff;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding-bottom: 80px;
+        }
+        
+        /* Header */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            padding: var(--space-sm) var(--space-md);
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+        
+        .menu-btn {
+            font-size: 1.4rem;
+            color: var(--text);
+            cursor: pointer;
+            margin-right: var(--space-sm);
+        }
+        
+        .search-bar {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            border: none;
+            background: #f1f3f5;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .search-bar input:focus {
+            outline: none;
+            background: #e9ecef;
+        }
+        
+        .search-bar i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        /* Avatar */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .avatar.sm {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+        }
+        
+        .avatar.md {
+            width: 48px;
+            height: 48px;
+            font-size: 1.2rem;
+        }
+        
+        .avatar.lg {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-top: 60px;
+            padding: var(--space-md);
+        }
+        
+        /* Post Card */
+        .post-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+        
+        .post-card:active {
+            transform: scale(0.98);
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+            justify-content: space-between;
+        }
+        
+        .post-user {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .post-user-info {
+            margin-left: var(--space-sm);
+        }
+        
+        .post-username {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .verified-badge {
+            color: var(--primary);
+            margin-left: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .post-time {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        
+        .follow-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .follow-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .follow-btn.following {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid #dee2e6;
+        }
+        
+        .post-content {
+            margin: var(--space-md) 0;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+        
+        .post-stats {
+            display: flex;
+            align-items: center;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .post-stats span {
+            margin-right: var(--space-md);
+            display: flex;
+            align-items: center;
+        }
+        
+        .post-stats i {
+            margin-right: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .post-actions {
+            display: flex;
+            border-top: 1px solid #f1f3f5;
+            padding-top: var(--space-sm);
+        }
+        
+        .post-action {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .post-action:hover {
+            background: #f8f9fa;
+        }
+        
+        .post-action i {
+            margin-right: 6px;
+            font-size: 1.1rem;
+        }
+        
+        .post-action.like.active i {
+            color: #f03e3e;
+        }
+        
+        .post-action.comment.active {
+            color: var(--primary);
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.7rem;
+        }
+        
+        .nav-item i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-plus {
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -25px;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            border: 4px solid var(--background);
+        }
+        
+        /* Side Menu */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100%;
+            background: var(--card);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 200;
+            transition: left 0.3s ease;
+            padding: var(--space-md);
+            overflow-y: auto;
+        }
+        
+        .side-menu.active {
+            left: 0;
+        }
+        
+        .menu-header {
+            display: flex;
+            align-items: center;
+            padding: var(--space-md) 0;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        
+        .menu-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: var(--space-md);
+        }
+        
+        .menu-user-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .menu-user-info p {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+        
+        .menu-items {
+            padding: var(--space-md) 0;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+        
+        .menu-item i {
+            margin-right: var(--space-md);
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+            color: var(--text-light);
+        }
+        
+        .menu-footer {
+            position: absolute;
+            bottom: var(--space-md);
+            left: var(--space-md);
+            right: var(--space-md);
+            border-top: 1px solid #f1f3f5;
+            padding-top: var(--space-md);
+        }
+        
+        .contact-info {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: var(--space-sm);
+        }
+        
+        .contact-info p {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .contact-info i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        /* Create Post Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--card);
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--radius);
+            padding: var(--space-md);
+            animation: modalOpen 0.3s ease;
+        }
+        
+        @keyframes modalOpen {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+        
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .close-btn {
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        
+        .post-form textarea {
+            width: 100%;
+            min-height: 150px;
+            border: 1px solid #f1f3f5;
+            border-radius: var(--radius-sm);
+            padding: var(--space-sm);
+            margin-bottom: var(--space-md);
+            resize: none;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .post-form textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .post-form button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .post-form button:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Comment Modal */
+        .comment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .comment-modal-content {
+            background: var(--card);
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--radius);
+            padding: var(--space-md);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+        
+        .comments-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: var(--space-md);
+        }
+        
+        .comment-item {
+            display: flex;
+            margin-bottom: var(--space-md);
+        }
+        
+        .comment-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: var(--space-sm);
+            flex-shrink: 0;
+        }
+        
+        .comment-content {
+            flex: 1;
+        }
+        
+        .comment-user {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .comment-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .comment-time {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        
+        .comment-form {
+            display: flex;
+            border-top: 1px solid #f1f3f5;
+            padding-top: var(--space-md);
+        }
+        
+        .comment-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #f1f3f5;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            margin-right: var(--space-sm);
+        }
+        
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .comment-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+        
+        /* Profile Page */
+        .profile-header {
+            background: var(--card);
+            padding: var(--space-lg) var(--space-md);
+            text-align: center;
+            margin-bottom: var(--space-md);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: var(--space-lg) 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        
+        .profile-bio {
+            margin: var(--space-md) 0;
+            font-size: 0.9rem;
+            color: var(--text);
+            padding: 0 var(--space-md);
+        }
+        
+        .profile-actions {
+            display: flex;
+            gap: var(--space-sm);
+            padding: 0 var(--space-md);
+        }
+        
+        .profile-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-outline {
+            border: 1px solid #dee2e6;
+            background: transparent;
+        }
+        
+        .btn-danger {
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            background: transparent;
+        }
+        
+        .user-posts {
+            margin-top: var(--space-md);
+        }
+        
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            padding: var(--space-lg);
+        }
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(67, 97, 238, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Auth Pages */
+        .auth-container {
+            max-width: 400px;
+            margin: 60px auto;
+            padding: var(--space-lg);
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .auth-title {
+            text-align: center;
+            margin-bottom: var(--space-lg);
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        
+        .auth-form input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: var(--space-sm);
+            border: 1px solid #f1f3f5;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .auth-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .auth-form button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: var(--space-sm);
+            transition: background 0.2s;
+        }
+        
+        .auth-form button:hover {
+            background: var(--primary-dark);
+        }
+        
+        .auth-switch {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .auth-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .guest-option {
+            text-align: center;
+            margin-top: var(--space-md);
+            padding-top: var(--space-md);
+            border-top: 1px solid #f1f3f5;
+        }
+        
+        .guest-btn {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-lg);
+            color: var(--text-light);
+        }
+        
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: var(--space-sm);
+            color: #e9ecef;
+        }
+        
+        /* Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Page -->
+    <div id="auth-page" class="auth-container">
+        <h2 class="auth-title">TweetBox<span>Pro</span></h2>
+        <div id="login-form" class="auth-form">
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button id="login-btn">Log In</button>
+            <div class="auth-switch">
+                Don't have an account? <a href="#" id="show-signup">Sign Up</a>
+            </div>
+            <div class="guest-option">
+                <a href="#" class="guest-btn" id="continue-guest">Continue as Guest</a>
+            </div>
+        </div>
+        
+        <div id="signup-form" class="auth-form" style="display: none;">
+            <input type="text" id="signup-username" placeholder="Username">
+            <input type="email" id="signup-email" placeholder="Email">
+            <input type="password" id="signup-password" placeholder="Password">
+            <button id="signup-btn">Sign Up</button>
+            <div class="auth-switch">
+                Already have an account? <a href="#" id="show-login">Log In</a>
+            </div>
+            <div class="guest-option">
+                <a href="#" class="guest-btn" id="continue-guest-2">Continue as Guest</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main App -->
+    <div id="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="menu-btn" id="menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Search posts...">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="avatar sm" id="header-avatar">G</div>
+        </header>
+        
+        <!-- Side Menu -->
+        <div class="side-menu" id="side-menu">
+            <div class="menu-header">
+                <div class="avatar md" id="menu-avatar">U</div>
+                <div class="menu-user-info">
+                    <h3 id="menu-username">Username</h3>
+                    <p id="menu-user-email">user@example.com</p>
+                </div>
+            </div>
+            
+            <div class="menu-items">
+                <div class="menu-item" id="menu-home">
+                    <i class="fas fa-home"></i> Home
+                </div>
+                <div class="menu-item" id="menu-profile">
+                    <i class="fas fa-user"></i> Profile
+                </div>
+                <div class="menu-item" id="menu-settings">
+                    <i class="fas fa-cog"></i> Settings
+                </div>
+                <div class="menu-item" id="menu-verify">
+                    <i class="fas fa-check-circle"></i> Request Verification
+                </div>
+            </div>
+            
+            <div class="menu-footer">
+                <h4>Contact Us</h4>
+                <div class="contact-info">
+                    <p><i class="fas fa-envelope"></i> mdecoderofficial@gmail.com</p>
+                    <p><i class="fab fa-youtube"></i> @yourchannel</p>
+                    <p><i class="fab fa-instagram"></i> @yourinstagram</p>
+                    <p><i class="fas fa-phone"></i> +91 8759609977</p>
+                </div>
+                <div class="menu-item" id="menu-logout">
+                    <i class="fas fa-sign-out-alt"></i> Log Out
+                </div>
+            </div>
+        </div>
+        
+        <!-- Overlay -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Posts will be loaded here dynamically -->
+            <div class="loading" id="loading-posts">
+                <div class="spinner"></div>
+            </div>
+            <div id="posts-container"></div>
+        </main>
+        
+        <!-- Profile Page (Hidden Initially) -->
+        <div id="profile-page" style="display: none;">
+            <div class="profile-header">
+                <div class="avatar lg" id="profile-avatar">U</div>
+                <h2 id="profile-username">Username</h2>
+                <p class="profile-bio" id="profile-bio">No bio yet</p>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="profile-posts">0</div>
+                        <div class="stat-label">Posts</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="profile-followers">0</div>
+                        <div class="stat-label">Followers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="profile-following">0</div>
+                        <div class="stat-label">Following</div>
+                    </div>
+                </div>
+                
+                <div class="profile-actions" id="profile-actions">
+                    <!-- Buttons will be added dynamically -->
+                </div>
+            </div>
+            
+            <div class="user-posts">
+                <div class="loading" id="loading-profile-posts">
+                    <div class="spinner"></div>
+                </div>
+                <div id="profile-posts-container"></div>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" id="home-nav">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" id="plus-nav">
+                <div class="nav-plus">
+                    <i class="fas fa-plus"></i>
+                </div>
+            </div>
+            <div class="nav-item" id="account-nav">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </nav>
+        
+        <!-- Create Post Modal -->
+        <div class="modal" id="post-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Create Post</div>
+                    <div class="close-btn" id="close-modal">&times;</div>
+                </div>
+                <form class="post-form" id="post-form">
+                    <textarea id="post-text" placeholder="Share your thoughts..."></textarea>
+                    <button type="submit">Post</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Comment Modal -->
+        <div class="comment-modal" id="comment-modal">
+            <div class="comment-modal-content">
+                <div class="comment-header">
+                    <div class="modal-title">Comments</div>
+                    <div class="close-btn" id="close-comment-modal">&times;</div>
+                </div>
+                <div class="comments-list" id="comments-list">
+                    <!-- Comments will be loaded here -->
+                </div>
+                <form class="comment-form" id="comment-form">
+                    <input type="text" class="comment-input" id="comment-input" placeholder="Add a comment...">
+                    <button type="submit" class="comment-submit">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Edit Profile Modal -->
+        <div class="modal" id="edit-profile-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Edit Profile</div>
+                    <div class="close-btn" id="close-edit-modal">&times;</div>
+                </div>
+                <form class="post-form" id="edit-profile-form">
+                    <input type="text" id="edit-username" placeholder="Username">
+                    <textarea id="edit-bio" placeholder="Bio" rows="3"></textarea>
+                    <button type="submit">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8X9U-zTaXQ8MPBcaMq2RuEZyuBJJBnuU",
+            authDomain: "text-986c1.firebaseapp.com",
+            databaseURL: "https://text-986c1-default-rtdb.firebaseio.com",
+            projectId: "text-986c1",
+            storageBucket: "text-986c1.appspot.com",
+            messagingSenderId: "386250999576",
+            appId: "1:386250999576:web:6dafe1981e9684d9f0406d",
+            measurementId: "G-7ZH64P6J1R"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // DOM Elements
+        const authPage = document.getElementById('auth-page');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const showSignup = document.getElementById('show-signup');
+        const showLogin = document.getElementById('show-login');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const continueGuest = document.getElementById('continue-guest');
+        const continueGuest2 = document.getElementById('continue-guest-2');
+        
+        const menuBtn = document.getElementById('menu-btn');
+        const sideMenu = document.getElementById('side-menu');
+        const overlay = document.getElementById('overlay');
+        const homeNav = document.getElementById('home-nav');
+        const plusNav = document.getElementById('plus-nav');
+        const accountNav = document.getElementById('account-nav');
+        const postModal = document.getElementById('post-modal');
+        const closeModal = document.getElementById('close-modal');
+        const postForm = document.getElementById('post-form');
+        const postsContainer = document.getElementById('posts-container');
+        const loadingPosts = document.getElementById('loading-posts');
+        
+        const mainContent = document.getElementById('main-content');
+        const profilePage = document.getElementById('profile-page');
+        const headerAvatar = document.getElementById('header-avatar');
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileUsername = document.getElementById('profile-username');
+        const profileBio = document.getElementById('profile-bio');
+        const profilePostsCount = document.getElementById('profile-posts');
+        const profileFollowersCount = document.getElementById('profile-followers');
+        const profileFollowingCount = document.getElementById('profile-following');
+        const profileActions = document.getElementById('profile-actions');
+        const profilePostsContainer = document.getElementById('profile-posts-container');
+        const loadingProfilePosts = document.getElementById('loading-profile-posts');
+        
+        const commentModal = document.getElementById('comment-modal');
+        const closeCommentModal = document.getElementById('close-comment-modal');
+        const commentsList = document.getElementById('comments-list');
+        const commentForm = document.getElementById('comment-form');
+        const commentInput = document.getElementById('comment-input');
+        
+        const menuHome = document.getElementById('menu-home');
+        const menuProfile = document.getElementById('menu-profile');
+        const menuLogout = document.getElementById('menu-logout');
+        const menuAvatar = document.getElementById('menu-avatar');
+        const menuUsername = document.getElementById('menu-username');
+        const menuUserEmail = document.getElementById('menu-user-email');
+        
+        const editProfileModal = document.getElementById('edit-profile-modal');
+        const closeEditModal = document.getElementById('close-edit-modal');
+        const editProfileForm = document.getElementById('edit-profile-form');
+        
+        // Variables
+        let currentUser = null;
+        let currentProfileUserId = null;
+        let postsListener = null;
+        let profilePostsListener = null;
+        let commentsListener = null;
+        let currentPostId = null;
+        
+        // Event Listeners
+        showSignup.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+        });
+        
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        });
+        
+        menuBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+        homeNav.addEventListener('click', showHome);
+        plusNav.addEventListener('click', showPostModal);
+        accountNav.addEventListener('click', showMyProfile);
+        closeModal.addEventListener('click', hidePostModal);
+        postForm.addEventListener('submit', createPost);
+        closeCommentModal.addEventListener('click', hideCommentModal);
+        commentForm.addEventListener('submit', addComment);
+        
+        menuHome.addEventListener('click', () => {
+            toggleMenu();
+            showHome();
+        });
+        
+        menuProfile.addEventListener('click', () => {
+            toggleMenu();
+            if (currentUser) {
+                showProfile(currentUser.uid);
+            } else {
+                alert('Please sign in to view profile');
+            }
+        });
+        
+        menuLogout.addEventListener('click', logoutUser);
+        
+        continueGuest.addEventListener('click', (e) => {
+            e.preventDefault();
+            continueAsGuest();
+        });
+        
+        continueGuest2.addEventListener('click', (e) => {
+            e.preventDefault();
+            continueAsGuest();
+        });
+        
+        loginBtn.addEventListener('click', loginUser);
+        signupBtn.addEventListener('click', signupUser);
+        
+        closeEditModal.addEventListener('click', hideEditProfileModal);
+        editProfileForm.addEventListener('submit', saveProfileChanges);
+        
+        // Initialize the app
+        function init() {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is signed in
+                    currentUser = user;
+                    authPage.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    loadUserData(user);
+                    setupPostsListener();
+                    showHome();
+                } else {
+                    // No user is signed in
+                    authPage.style.display = 'block';
+                    appContainer.style.display = 'none';
+                    if (postsListener) {
+                        postsListener(); // Unsubscribe from posts listener
+                        postsListener = null;
+                    }
+                    if (profilePostsListener) {
+                        profilePostsListener(); // Unsubscribe from profile posts listener
+                        profilePostsListener = null;
+                    }
+                }
+            });
+        }
+        
+        // Toggle side menu
+        function toggleMenu() {
+            sideMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        
+        // Show home page
+        function showHome() {
+            mainContent.style.display = 'block';
+            profilePage.style.display = 'none';
+            updateActiveNav(homeNav);
+        }
+        
+        // Show profile page
+        function showProfile(userId) {
+            mainContent.style.display = 'none';
+            profilePage.style.display = 'block';
+            currentProfileUserId = userId;
+            
+            if (userId === currentUser?.uid) {
+                // Show current user's profile
+                updateActiveNav(accountNav);
+                setupProfileActions(true);
+            } else {
+                // Show other user's profile
+                updateActiveNav(null);
+                setupProfileActions(false);
+                checkIfFollowing(userId);
+            }
+            
+            loadProfileData(userId);
+        }
+        
+        // Show current user's profile
+        function showMyProfile() {
+            if (currentUser) {
+                showProfile(currentUser.uid);
+            } else {
+                alert('Please sign in to view your profile');
+            }
+        }
+        
+        // Setup profile action buttons
+        function setupProfileActions(isCurrentUser) {
+            profileActions.innerHTML = '';
+            
+            if (isCurrentUser) {
+                // Current user's profile
+                const editBtn = document.createElement('div');
+                editBtn.className = 'profile-btn btn-primary';
+                editBtn.textContent = 'Edit Profile';
+                editBtn.addEventListener('click', showEditProfileModal);
+                
+                const logoutBtn = document.createElement('div');
+                logoutBtn.className = 'profile-btn btn-danger';
+                logoutBtn.textContent = 'Log Out';
+                logoutBtn.addEventListener('click', logoutUser);
+                
+                profileActions.appendChild(editBtn);
+                profileActions.appendChild(logoutBtn);
+            } else {
+                // Other user's profile
+                const followBtn = document.createElement('div');
+                followBtn.className = 'profile-btn btn-primary';
+                followBtn.textContent = 'Follow';
+                followBtn.id = 'profile-follow-btn';
+                followBtn.addEventListener('click', () => toggleFollow(currentProfileUserId));
+                
+                profileActions.appendChild(followBtn);
+            }
+        }
+        
+        // Show edit profile modal
+        function showEditProfileModal() {
+            if (!currentUser) return;
+            
+            db.collection('users').doc(currentUser.uid).get().then((doc) => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    document.getElementById('edit-username').value = userData.username;
+                    document.getElementById('edit-bio').value = userData.bio || '';
+                    editProfileModal.style.display = 'flex';
+                }
+            });
+        }
+        
+        // Hide edit profile modal
+        function hideEditProfileModal() {
+            editProfileModal.style.display = 'none';
+        }
+        
+        // Save profile changes
+        function saveProfileChanges(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('edit-username').value.trim();
+            const bio = document.getElementById('edit-bio').value.trim();
+            
+            if (!username) {
+                alert('Username cannot be empty');
+                return;
+            }
+            
+            db.collection('users').doc(currentUser.uid).update({
+                username: username,
+                bio: bio
+            }).then(() => {
+                hideEditProfileModal();
+                loadProfileData(currentUser.uid);
+                loadUserData(currentUser);
+            }).catch((error) => {
+                alert('Error updating profile: ' + error.message);
+            });
+        }
+        
+        // Load user data
+        function loadUserData(user) {
+            db.collection('users').doc(user.uid).get().then((doc) => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    // Update header avatar
+                    headerAvatar.textContent = userData.username.charAt(0).toUpperCase();
+                    
+                    // Update menu user info
+                    menuAvatar.textContent = userData.username.charAt(0).toUpperCase();
+                    menuUsername.textContent = userData.username;
+                    menuUserEmail.textContent = user.email;
+                    
+                    // If viewing own profile, update profile data
+                    if (currentProfileUserId === user.uid) {
+                        profileAvatar.textContent = userData.username.charAt(0).toUpperCase();
+                        profileUsername.textContent = userData.username;
+                        profileBio.textContent = userData.bio || 'No bio yet';
+                    }
+                }
+            });
+        }
+        
+        // Load profile data
+        function loadProfileData(userId) {
+            loadingProfilePosts.style.display = 'flex';
+            profilePostsContainer.innerHTML = '';
+            
+            db.collection('users').doc(userId).get().then((doc) => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    profileAvatar.textContent = userData.username.charAt(0).toUpperCase();
+                    profileUsername.textContent = userData.username;
+                    profileBio.textContent = userData.bio || 'No bio yet';
+                    
+                    // Show verified badge if user is verified
+                    if (userData.verified) {
+                        profileUsername.innerHTML += ' <i class="fas fa-check-circle verified-badge"></i>';
+                    }
+                }
+            });
+            
+            // Load profile stats
+            db.collection('posts').where('userId', '==', userId).get()
+                .then((querySnapshot) => {
+                    profilePostsCount.textContent = querySnapshot.size;
+                });
+            
+            // Load followers count
+            db.collection('followers').doc(userId).collection('userFollowers').get()
+                .then((querySnapshot) => {
+                    profileFollowersCount.textContent = querySnapshot.size;
+                });
+            
+            // Load following count
+            db.collection('following').doc(userId).collection('userFollowing').get()
+                .then((querySnapshot) => {
+                    profileFollowingCount.textContent = querySnapshot.size;
+                });
+            
+            // Setup profile posts listener
+            if (profilePostsListener) {
+                profilePostsListener(); // Unsubscribe from previous listener
+            }
+            
+            profilePostsListener = db.collection('posts')
+                .where('userId', '==', userId)
+                .orderBy('createdAt', 'desc')
+                .onSnapshot((snapshot) => {
+                    loadingProfilePosts.style.display = 'none';
+                    profilePostsContainer.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        profilePostsContainer.innerHTML = `
+                            <div class="empty-state">
+                                <i class="far fa-comment-dots"></i>
+                                <p>No posts yet</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    snapshot.forEach((doc) => {
+                        const post = doc.data();
+                        displayPost(doc.id, post, profilePostsContainer);
+                    });
+                });
+        }
+        
+        // Check if current user is following this profile
+        function checkIfFollowing(userId) {
+            if (!currentUser) return;
+            
+            const followBtn = document.getElementById('profile-follow-btn');
+            if (!followBtn) return;
+            
+            db.collection('following').doc(currentUser.uid).collection('userFollowing')
+                .doc(userId).get().then((doc) => {
+                    if (doc.exists) {
+                        followBtn.textContent = 'Following';
+                        followBtn.classList.add('btn-outline');
+                        followBtn.classList.remove('btn-primary');
+                    } else {
+                        followBtn.textContent = 'Follow';
+                        followBtn.classList.add('btn-primary');
+                        followBtn.classList.remove('btn-outline');
+                    }
+                });
+        }
+        
+        // Toggle follow/unfollow
+        function toggleFollow(userId) {
+            if (!currentUser) return;
+            
+            const followBtn = document.getElementById('profile-follow-btn');
+            if (!followBtn) return;
+            
+            const followingRef = db.collection('following').doc(currentUser.uid)
+                .collection('userFollowing').doc(userId);
+            
+            const followersRef = db.collection('followers').doc(userId)
+                .collection('userFollowers').doc(currentUser.uid);
+            
+            followingRef.get().then((doc) => {
+                if (doc.exists) {
+                    // Unfollow
+                    followingRef.delete();
+                    followersRef.delete();
+                    followBtn.textContent = 'Follow';
+                    followBtn.classList.add('btn-primary');
+                    followBtn.classList.remove('btn-outline');
+                    
+                    // Update followers count
+                    profileFollowersCount.textContent = parseInt(profileFollowersCount.textContent) - 1;
+                } else {
+                    // Follow
+                    followingRef.set({
+                        userId: userId,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    followersRef.set({
+                        userId: currentUser.uid,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    followBtn.textContent = 'Following';
+                    followBtn.classList.add('btn-outline');
+                    followBtn.classList.remove('btn-primary');
+                    
+                    // Update followers count
+                    profileFollowersCount.textContent = parseInt(profileFollowersCount.textContent) + 1;
+                }
+            });
+        }
+        
+        // Setup real-time posts listener
+        function setupPostsListener() {
+            loadingPosts.style.display = 'flex';
+            postsContainer.innerHTML = '';
+            
+            if (postsListener) {
+                postsListener(); // Unsubscribe from previous listener
+            }
+            
+            postsListener = db.collection('posts')
+                .orderBy('createdAt', 'desc')
+                .onSnapshot((snapshot) => {
+                    loadingPosts.style.display = 'none';
+                    postsContainer.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        postsContainer.innerHTML = `
+                            <div class="empty-state">
+                                <i class="far fa-comment-dots"></i>
+                                <p>No posts yet. Be the first to share!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    snapshot.forEach((doc) => {
+                        const post = doc.data();
+                        displayPost(doc.id, post, postsContainer);
+                    });
+                });
+        }
+        
+        // Display a post
+        function displayPost(postId, post, container) {
+            const postElement = document.createElement('div');
+            postElement.className = 'post-card';
+            
+            // Check if current user is the post author
+            const isCurrentUser = currentUser && currentUser.uid === post.userId;
+            
+            postElement.innerHTML = `
+                <div class="post-header">
+                    <div class="post-user" data-user-id="${post.userId}">
+                        <div class="avatar sm">${post.username.charAt(0).toUpperCase()}</div>
+                        <div class="post-user-info">
+                            <div class="post-username">
+                                ${post.username}
+                                ${post.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                            </div>
+                            <div class="post-time">${formatTime(post.createdAt?.toDate())}</div>
+                        </div>
+                    </div>
+                    ${!isCurrentUser ? `<button class="follow-btn">Follow</button>` : ''}
+                </div>
+                <div class="post-content">${post.content}</div>
+                <div class="post-stats">
+                    <span><i class="far fa-heart"></i> ${post.likes || 0}</span>
+                    <span><i class="far fa-comment"></i> ${post.comments || 0}</span>
+                </div>
+                <div class="post-actions">
+                    <div class="post-action like" data-post-id="${postId}">
+                        <i class="far fa-heart"></i> Like
+                    </div>
+                    <div class="post-action comment" data-post-id="${postId}">
+                        <i class="far fa-comment"></i> Comment
+                    </div>
+                    <div class="post-action" data-post-id="${postId}">
+                        <i class="far fa-share-square"></i> Share
+                    </div>
+                </div>
+            `;
+            
+            // Add click event to user info to navigate to profile
+            const userElement = postElement.querySelector('.post-user');
+            userElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showProfile(post.userId);
+            });
+            
+            // Setup follow button if not current user's post
+            if (!isCurrentUser && currentUser) {
+                const followBtn = postElement.querySelector('.follow-btn');
+                db.collection('following').doc(currentUser.uid).collection('userFollowing')
+                    .doc(post.userId).get().then((doc) => {
+                        if (doc.exists) {
+                            followBtn.textContent = 'Following';
+                            followBtn.classList.add('following');
+                        }
+                    });
+                
+                followBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFollow(post.userId);
+                });
+            }
+            
+            // Add like functionality
+            const likeBtn = postElement.querySelector('.post-action.like');
+            if (currentUser) {
+                // Check if user already liked this post
+                db.collection('likes').doc(postId).collection('userLikes')
+                    .doc(currentUser.uid).get().then((doc) => {
+                        if (doc.exists) {
+                            likeBtn.classList.add('active');
+                        }
+                    });
+                
+                likeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleLike(postId, likeBtn);
+                });
+            }
+            
+            // Add comment functionality
+            const commentBtn = postElement.querySelector('.post-action.comment');
+            commentBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showComments(postId);
+            });
+            
+            container.appendChild(postElement);
+        }
+        
+        // Toggle like on a post
+        function toggleLike(postId, likeBtn) {
+            if (!currentUser) return;
+            
+            const postRef = db.collection('posts').doc(postId);
+            const likeRef = db.collection('likes').doc(postId).collection('userLikes').doc(currentUser.uid);
+            
+            likeRef.get().then((doc) => {
+                if (doc.exists) {
+                    // Unlike the post
+                    likeRef.delete();
+                    postRef.update({
+                        likes: firebase.firestore.FieldValue.increment(-1)
+                    });
+                    likeBtn.classList.remove('active');
+                } else {
+                    // Like the post
+                    likeRef.set({
+                        userId: currentUser.uid,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    postRef.update({
+                        likes: firebase.firestore.FieldValue.increment(1)
+                    });
+                    likeBtn.classList.add('active');
+                }
+            });
+        }
+        
+        // Show comments for a post
+        function showComments(postId) {
+            currentPostId = postId;
+            commentsList.innerHTML = '';
+            commentModal.style.display = 'flex';
+            
+            // Load comments
+            if (commentsListener) {
+                commentsListener(); // Unsubscribe from previous listener
+            }
+            
+            commentsListener = db.collection('comments').doc(postId).collection('postComments')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot((snapshot) => {
+                    commentsList.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        commentsList.innerHTML = `
+                            <div class="empty-state">
+                                <p>No comments yet</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    snapshot.forEach((doc) => {
+                        const comment = doc.data();
+                        displayComment(doc.id, comment);
+                    });
+                });
+        }
+        
+        // Display a comment
+        function displayComment(commentId, comment) {
+            const commentElement = document.createElement('div');
+            commentElement.className = 'comment-item';
+            commentElement.innerHTML = `
+                <div class="comment-avatar">${comment.username.charAt(0).toUpperCase()}</div>
+                <div class="comment-content">
+                    <div class="comment-user">${comment.username}</div>
+                    <div class="comment-text">${comment.text}</div>
+                    <div class="comment-time">${formatTime(comment.timestamp?.toDate())}</div>
+                </div>
+            `;
+            commentsList.appendChild(commentElement);
+        }
+        
+        // Hide comment modal
+        function hideCommentModal() {
+            commentModal.style.display = 'none';
+            commentInput.value = '';
+            
+            if (commentsListener) {
+                commentsListener(); // Unsubscribe from comments listener
+                commentsListener = null;
+            }
+        }
+        
+        // Add a comment
+        function addComment(e) {
+            e.preventDefault();
+            const commentText = commentInput.value.trim();
+            
+            if (!commentText || !currentUser || !currentPostId) return;
+            
+            db.collection('users').doc(currentUser.uid).get().then((userDoc) => {
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    db.collection('comments').doc(currentPostId).collection('postComments').add({
+                        userId: currentUser.uid,
+                        username: userData.username,
+                        text: commentText,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        // Update comment count
+                        db.collection('posts').doc(currentPostId).update({
+                            comments: firebase.firestore.FieldValue.increment(1)
+                        });
+                        
+                        commentInput.value = '';
+                    }).catch((error) => {
+                        alert('Error adding comment: ' + error.message);
+                    });
+                }
+            });
+        }
+        
+        // Format time
+        function formatTime(date) {
+            if (!date) return 'Just now';
+            
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        }
+        
+        // Show post modal
+        function showPostModal() {
+            if (!currentUser) {
+                alert('Please sign in to create posts');
+                return;
+            }
+            postModal.style.display = 'flex';
+        }
+        
+        // Hide post modal
+        function hidePostModal() {
+            postModal.style.display = 'none';
+            postForm.reset();
+        }
+        
+        // Create a new post
+        function createPost(e) {
+            e.preventDefault();
+            const postText = document.getElementById('post-text').value.trim();
+            
+            if (!postText) {
+                alert('Post cannot be empty');
+                return;
+            }
+            
+            db.collection('users').doc(currentUser.uid).get().then((userDoc) => {
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    db.collection('posts').add({
+                        userId: currentUser.uid,
+                        username: userData.username,
+                        verified: userData.verified || false,
+                        content: postText,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        likes: 0,
+                        comments: 0
+                    }).then(() => {
+                        hidePostModal();
+                    }).catch((error) => {
+                        alert('Error creating post: ' + error.message);
+                    });
+                }
+            });
+        }
+        
+        // Continue as guest
+        function continueAsGuest() {
+            currentUser = null;
+            authPage.style.display = 'none';
+            appContainer.style.display = 'block';
+            
+            // Generate random guest number
+            const guestNumber = Math.floor(Math.random() * 2) + 1;
+            headerAvatar.textContent = `G${guestNumber}`;
+            
+            // Show home page with limited functionality
+            showHome();
+        }
+        
+        // Login user
+        function loginUser() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+        
+        // Signup user
+        function signupUser() {
+            const username = document.getElementById('signup-username').value.trim();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            
+            if (!username) {
+                alert('Username cannot be empty');
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Save additional user data
+                    return db.collection('users').doc(userCredential.user.uid).set({
+                        username: username,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        verified: false,
+                        bio: ''
+                    });
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+        
+        // Logout user
+        function logoutUser() {
+            auth.signOut()
+                .then(() => {
+                    appContainer.style.display = 'none';
+                    authPage.style.display = 'block';
+                    // Reset forms
+                    document.getElementById('login-email').value = '';
+                    document.getElementById('login-password').value = '';
+                    document.getElementById('signup-username').value = '';
+                    document.getElementById('signup-email').value = '';
+                    document.getElementById('signup-password').value = '';
+                    loginForm.style.display = 'block';
+                    signupForm.style.display = 'none';
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+        
+        // Update active navigation item
+        function updateActiveNav(activeNav) {
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            if (activeNav) {
+                activeNav.classList.add('active');
+            }
+        }
+        
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
